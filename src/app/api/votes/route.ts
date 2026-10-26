@@ -7,9 +7,11 @@ export async function POST(request: NextRequest) {
   if (typeof ideaId !== "string" || !/^[0-9a-f-]{36}$/i.test(ideaId)) {
     return NextResponse.json({ error: "Invalid idea." }, { status: 400 });
   }
-  let voterId = request.cookies.get("idea_voter")?.value;
-  const isNewVoter = !voterId || !/^[0-9a-f-]{36}$/i.test(voterId);
-  if (isNewVoter) voterId = crypto.randomUUID();
+  const storedVoterId = request.cookies.get("idea_voter")?.value;
+  const isNewVoter = !storedVoterId || !/^[0-9a-f-]{36}$/i.test(storedVoterId);
+  const voterId = storedVoterId && /^[0-9a-f-]{36}$/i.test(storedVoterId)
+    ? storedVoterId
+    : crypto.randomUUID();
 
   const { error } = await getSupabase().from("votes").insert({ idea_id: ideaId, voter_id: voterId });
   if (error?.code === "23505") return NextResponse.json({ error: "You have already voted for this idea." }, { status: 409 });
